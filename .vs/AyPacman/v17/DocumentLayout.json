@@ -1,0 +1,54 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Administrator\\Desktop\\AyPacman\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\Pacman.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|solutionrelative:Pacman\\Pacman.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\mapFile.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|solutionrelative:Pacman\\mapFile.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 1,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "mapFile.txt",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\mapFile.txt",
+              "RelativeDocumentMoniker": "Pacman\\mapFile.txt",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\mapFile.txt",
+              "RelativeToolTip": "Pacman\\mapFile.txt",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAAqAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
+              "WhenOpened": "2025-06-19T05:11:02.413Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Pacman.cpp",
+              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\Pacman.cpp",
+              "RelativeDocumentMoniker": "Pacman\\Pacman.cpp",
+              "ToolTip": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\Pacman.cpp",
+              "RelativeToolTip": "Pacman\\Pacman.cpp",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAAAH4AAAAbAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2025-06-19T04:33:40.241Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
