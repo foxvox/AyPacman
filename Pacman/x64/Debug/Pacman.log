@@ -1,12 +1,12 @@
 ﻿  Pacman.cpp
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(121,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(123,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(125,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(127,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(224,44): warning C4244: '=': '_Ty'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(224,44): warning C4244:         with
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(224,44): warning C4244:         [
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(224,44): warning C4244:             _Ty=wchar_t
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(224,44): warning C4244:         ]
-C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(287,15): warning C4244: '인수': 'time_t'에서 'unsigned int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(169,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(180,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(185,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(192,26): warning C4066: 와이드 문자 상수에서 첫 문자 뒤의 문자는 무시됩니다.
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(286,44): warning C4244: '=': '_Ty'에서 'char'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(286,44): warning C4244:         with
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(286,44): warning C4244:         [
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(286,44): warning C4244:             _Ty=wchar_t
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(286,44): warning C4244:         ]
+C:\Users\Administrator\Desktop\AyPacman\Pacman\Pacman.cpp(350,15): warning C4244: '인수': 'time_t'에서 'unsigned int'(으)로 변환하면서 데이터가 손실될 수 있습니다.
   Pacman.vcxproj -> C:\Users\Administrator\Desktop\AyPacman\x64\Debug\Pacman.exe

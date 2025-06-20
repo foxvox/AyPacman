@@ -15,15 +15,57 @@ constexpr auto ROW_MAX = 22;
 constexpr auto COL_MAX = 42;
 constexpr auto ENEMY_CNT = 5;
 
-using namespace std;
+using namespace std; 
+
+enum class Direction 
+{
+    UP, DOWN, LEFT, RIGHT
+}; 
+
+struct Point 
+{ 
+    int x; 
+    int y; 
+};
 
 class Enemy
 {
 public:
-    int x;
-    int y;
-    char prevChar;
-    bool wasFood;
+    int x; 
+    int y; 
+    char prevChar; 
+    bool wasFood; 
+    Direction direction; 
+}; 
+
+class Pacman
+{
+private:
+	Point position;  // 현재 위치 
+	bool invincible; // 무적 상태 여부 
+public:
+    Pacman(int _x, int _y) : position{ _x, _y }, invincible(false) {} 
+    
+    void Move(int _x, int _y)
+    {
+        position.x = _x; 
+        position.y = _y; 
+    }
+    
+    void ActivateInvincibility()
+    {
+        invincible = true; 
+    }
+    
+    void DeactivateInvincibility() 
+    {
+        invincible = false; 
+    }
+    
+    bool IsInvincible() const
+    {
+        return invincible;
+    }
 };
 
 class Game
@@ -32,11 +74,11 @@ public:
     static int enemyMoveCnt;
     static int invincibleCnt;
 public:
-    Game() : pacmanX{ 20 }, pacmanY{ 7 }, gameOver{ false }, score{ 0 }, foodCnt{ 0 }
+    Game() : pacmanX{ 20 }, pacmanY{ 7 }, gameOver{ false }, score{ 0 }, foodCnt{ 0 }, ch{ L' ' } 
     {
         map.resize(ROW_MAX, vector<wchar_t>(COL_MAX, L' ')); 
         LoadMapFromFile(L"mapFile.txt");        
-        map[pacmanY][pacmanX] = L'@';
+        map[pacmanY][pacmanX] = L'P';
         hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
         SpawnEnemies();  
     }
@@ -76,7 +118,8 @@ private:
     int score;
     int foodCnt;
     HANDLE hConsole;
-    vector<Enemy> enemies;
+    vector<Enemy> enemies; 
+    wchar_t ch; 
 
     void LoadMapFromFile(const wstring& filename)
     {
@@ -96,39 +139,60 @@ private:
             for (int col = 0; col < COL_MAX && col < line.size(); col++)
             {
                 map[row][col] = line[col];
-                if (map[row][col] == L'*')
+                if (map[row][col] == L'0')
                     foodCnt++;
-            }
+            } 
             row++;
         }
-        file.close();
+        file.close(); 
     }
   
     void Render()
     {
         COORD cursorPosition = { 0, 0 };
-        SetConsoleCursorPosition(hConsole, cursorPosition);
+        SetConsoleCursorPosition(hConsole, cursorPosition); 
 
         for (int row = 0; row < ROW_MAX; row++)
         {
             for (int col = 0; col < COL_MAX; col++)
-            {         
-                wchar_t ch = map[row][col]; 
+            {
+                ch = map[row][col];
 
-                if (ch == '#') 
+                if (ch == L'1')
+                {
+                    SetConsoleTextAttribute(hConsole, 8); // Gray 
                     ch = L'⬛';
-                else if (map[row][col] == '@' && invincibleCnt > 0)
-                    ch = L'😎'; 
-                else if (map[row][col] == '@')
-                    ch = L'😃';
-                else if (map[row][col] == 'M')
-                    ch = L'👾'; 
-                else if (map[row][col] == '*')
-                    ch = L'🍒'; 
-                else if (ch == ' ') 
-                    ch = L'　';  
+                }
+                else if (map[row][col] == L'0')
+                {
+                    SetConsoleTextAttribute(hConsole, 6); // Cyan 
+                    ch = L'🍩';
+                    // ch = L'🍏'; 
+                }
+                else if (map[row][col] == L' ')
+                {
+                    SetConsoleTextAttribute(hConsole, 7); // White 
+                    ch = L' ';
+                } 
+                else if (map[row][col] == L'P') 
+                {
+                    SetConsoleTextAttribute(hConsole, 14); // Yellow 
+                    ch = L'😃'; 
+                }
+                else if (map[row][col] == L'M') 
+                {
+                    SetConsoleTextAttribute(hConsole, 12); 
+                    ch = L'👹'; 
+                    // ch = L'💀'; 
+                }             
                 
+                else if (map[row][col] == L'P' && invincibleCnt > 0)
+                {
+					SetConsoleTextAttribute(hConsole, 12); // Red
+                    ch = L'😃';
+                }                 
                 wcout << ch; 
+				SetConsoleTextAttribute(hConsole, 7); // Reset to default color 
             }
             wcout << endl;
         }        
@@ -161,10 +225,8 @@ private:
                 map[pacmanY][pacmanX] = ' ';
                 pacmanX = newX;
                 pacmanY = newY;
-                map[pacmanY][pacmanX] = '@';
+                map[pacmanY][pacmanX] = 'P';
 
-                // 모든 먹이를 먹었으면 승리 처리 
-                // foodCnt bug 때문에 이중처리
                 if (foodCnt == 0)
                 {
                     gameOver = true;
@@ -186,9 +248,9 @@ private:
         {
             ex = rand() % COL_MAX;
             ey = rand() % ROW_MAX;
-        } while (map[ey][ex] != ' ');
-        enemies.push_back({ ex, ey, ' ', false });
-        map[ey][ex] = 'M';
+        } while (map[ey][ex] != L' ');
+        enemies.push_back({ ex, ey, L' ', false });
+        map[ey][ex] = L'M';
     }
 
     void SpawnEnemies()
@@ -219,23 +281,23 @@ private:
                 case 3: newX = min(COL_MAX - 1, enemy.x + 1); break; // 오른쪽 이동
                 }
 
-            } while (map[newY][newX] == '#'); // 새 위치가 벽이면 이동할 위치 다시 설정 
+            } while (map[newY][newX] == L'#'); // 새 위치가 벽이면 이동할 위치 다시 설정 
 
             enemy.prevChar = map[newY][newX]; // 이동할 위치의 기존 문자 저장 
 
-            map[newY][newX] = 'M'; // 새로운 위치에 `M` 배치 
+            map[newY][newX] = L'M'; // 새로운 위치에 `M` 배치 
 
-            // 이전 프레임 때 o을 M이 덮어 쓴 경우 
+            // 이전 프레임 때 *을 M이 덮어 쓴 경우 
             if (enemy.wasFood == true)
-                map[enemy.y][enemy.x] = 'o';
+                map[enemy.y][enemy.x] = L'*';
             else
-                map[enemy.y][enemy.x] = ' ';
+                map[enemy.y][enemy.x] = L' ';
 
             // 에너미 위치를 갱신한다 
             enemy.x = newX;
             enemy.y = newY;
 
-            if (enemy.prevChar == 'o')
+            if (enemy.prevChar == L'*')
                 enemy.wasFood = true;
             else
                 enemy.wasFood = false;
@@ -283,6 +345,7 @@ int Game::invincibleCnt = 0;
 
 int main()
 {
+    SetConsoleOutputCP(CP_UTF8);
     (void)_setmode(_fileno(stdout), _O_U16TEXT);
     srand(time(nullptr));
     Game game;
