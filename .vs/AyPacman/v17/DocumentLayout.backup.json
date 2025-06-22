@@ -1,17 +1,14 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "C:\\Users\\Administrator\\Desktop\\AyPacman\\",
+  "WorkspaceRootPath": "D:\\GameBox\\AyPacman\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\Pacman.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "AbsoluteMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|D:\\GameBox\\AyPacman\\Pacman\\Pacman.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|solutionrelative:Pacman\\Pacman.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\mapFile.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "AbsoluteMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|D:\\GameBox\\AyPacman\\Pacman\\mapFile.txt||{8B382828-6202-11D1-8870-0000F87579D2}",
       "RelativeMoniker": "D:0:0:{02FB0966-6997-4161-93E8-61913E0FD5D2}|Pacman\\Pacman.vcxproj|solutionrelative:Pacman\\mapFile.txt||{8B382828-6202-11D1-8870-0000F87579D2}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\Administrator\\Desktop\\Pacman\\Pacman-master.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -21,42 +18,30 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 1,
           "Children": [
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "Pacman-master.cpp",
-              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\Pacman\\Pacman-master.cpp",
-              "RelativeDocumentMoniker": "..\\Pacman\\Pacman-master.cpp",
-              "ToolTip": "C:\\Users\\Administrator\\Desktop\\Pacman\\Pacman-master.cpp",
-              "RelativeToolTip": "..\\Pacman\\Pacman-master.cpp",
-              "ViewState": "AgIAAEsAAAAAAAAAAAAAAHwAAAAHAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2025-06-20T04:13:59.455Z"
-            },
             {
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "mapFile.txt",
-              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\mapFile.txt",
+              "DocumentMoniker": "D:\\GameBox\\AyPacman\\Pacman\\mapFile.txt",
               "RelativeDocumentMoniker": "Pacman\\mapFile.txt",
-              "ToolTip": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\mapFile.txt",
+              "ToolTip": "D:\\GameBox\\AyPacman\\Pacman\\mapFile.txt",
               "RelativeToolTip": "Pacman\\mapFile.txt",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAANAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAADwvwgAAAAjAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003109|",
-              "WhenOpened": "2025-06-19T05:11:02.413Z",
+              "WhenOpened": "2025-06-22T18:13:51.674Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "Pacman.cpp",
-              "DocumentMoniker": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\Pacman.cpp",
+              "DocumentMoniker": "D:\\GameBox\\AyPacman\\Pacman\\Pacman.cpp",
               "RelativeDocumentMoniker": "Pacman\\Pacman.cpp",
-              "ToolTip": "C:\\Users\\Administrator\\Desktop\\AyPacman\\Pacman\\Pacman.cpp",
+              "ToolTip": "D:\\GameBox\\AyPacman\\Pacman\\Pacman.cpp",
               "RelativeToolTip": "Pacman\\Pacman.cpp",
-              "ViewState": "AgIAAJIAAAAAAAAAAAAAAJoAAAAvAAAAAAAAAA==",
+              "ViewState": "AgIAAPAAAAAAAAAAAAAAAMkAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2025-06-19T04:33:40.241Z",
               "EditorCaption": ""

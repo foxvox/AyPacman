@@ -9,7 +9,9 @@
 #include <ctime> 
 #include <io.h>
 #include <fcntl.h> 
-#include <codecvt>
+#include <codecvt> 
+#include <random>
+#include <algorithm>  
 
 constexpr auto ROW_MAX = 22;
 constexpr auto COL_MAX = 42;
@@ -17,40 +19,40 @@ constexpr auto ENEMY_CNT = 5;
 
 using namespace std; 
 
-enum class Direction 
+enum class Dir 
 {
-    UP, DOWN, LEFT, RIGHT
+    Up, Down, Left, Right, None  
 }; 
 
-struct Point 
+struct Pos 
 { 
     int x; 
     int y; 
 };
 
-class Enemy
+struct Enemy
 {
-public:
-    int x; 
-    int y; 
-    char prevChar; 
-    bool wasFood; 
-    Direction direction; 
+    Pos pos; 
+    wchar_t prevChar; 
+    bool wasCoin;   
 }; 
 
 class Pacman
 {
 private:
-	Point position;  // 현재 위치 
+	Pos pos;  // 현재 위치 
 	bool invincible; // 무적 상태 여부 
+    Dir dir;
 public:
-    Pacman(int _x, int _y) : position{ _x, _y }, invincible(false) {} 
-    
-    void Move(int _x, int _y)
+    Pacman(const Pos& _pos) : pos{}, invincible{ false }, dir{ Dir::None } 
     {
-        position.x = _x; 
-        position.y = _y; 
+        pos = _pos; 
     }
+
+    Pos GetPos() const { return pos; }     
+    void SetPos(const Pos& _pos) { pos = _pos; } 
+    Dir GetDir() const { return dir; } 
+    void SetDir(const Dir& _dir) { dir = _dir; } 
     
     void ActivateInvincibility()
     {
@@ -70,17 +72,67 @@ public:
 
 class Game
 {
+private:
+    vector<vector<wchar_t>> map; 
+    vector<Enemy> enemies;
+    Pacman* pm; 
+    bool gameOver;
+    int score;
+    int coinCnt;
+    HANDLE hConsole;   
+    wchar_t wch;
+    mt19937 randEngine; 
+    HANDLE hScreen[2];
+    int screenIndex;
 public:
     static int enemyMoveCnt;
     static int invincibleCnt;
 public:
-    Game() : pacmanX{ 20 }, pacmanY{ 7 }, gameOver{ false }, score{ 0 }, foodCnt{ 0 }, ch{ L' ' } 
+    Game() : pm{}, gameOver{ false }, score{}, coinCnt{}, hConsole{}, wch{ L' ' }, hScreen{}, screenIndex {}
     {
+        // 랜덤 시드 설정 
+        random_device   rd; 
+        mt19937         gen(rd()); 
+        randEngine = gen; 
+
         map.resize(ROW_MAX, vector<wchar_t>(COL_MAX, L' ')); 
-        LoadMapFromFile(L"mapFile.txt");        
-        map[pacmanY][pacmanX] = L'P';
-        hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+        LoadMapFromFile(L"mapFile.txt");                
+        hConsole = GetStdHandle(STD_OUTPUT_HANDLE); 
+        InitDoubleBuffer(); 
+        SpawnPacman(); 
         SpawnEnemies();  
+    } 
+
+    void InitDoubleBuffer()
+    {
+        CONSOLE_CURSOR_INFO cci = { 1, FALSE };
+
+        hScreen[0] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+        hScreen[1] = CreateConsoleScreenBuffer(GENERIC_READ | GENERIC_WRITE, 0, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+
+        SetConsoleCursorInfo(hScreen[0], &cci);
+        SetConsoleCursorInfo(hScreen[1], &cci);
+
+        SetConsoleActiveScreenBuffer(hScreen[screenIndex]);
+    } 
+
+    void FlipBuffer()
+    {
+        screenIndex ^= 1; // XOR 연산으로 토글 
+        SetConsoleActiveScreenBuffer(hScreen[screenIndex]);
+    }
+
+    int GetRand(int max)
+    {
+        uniform_int_distribution<> dist(0, max); 
+        return dist(randEngine);  
+    }
+
+    void SpawnPacman()
+    {
+        Pos pos{ 20, 10 }; 
+        pm = new Pacman(pos);
+        map[pm->GetPos().y][pm->GetPos().x] = L'ⓟ';
     }
 
     void Run()
@@ -95,7 +147,7 @@ public:
             else
                 enemyMoveCnt = 0;
 
-            if (enemyMoveCnt % 4 == 0) // 적 특정 프레임마다 동작  
+            if (enemyMoveCnt % 5 == 0) // 적 특정 프레임마다 동작  
             {
                 MoveEnemies();
                 CheckCollision();
@@ -110,16 +162,6 @@ public:
             Sleep(100); // 게임 루프 자체를 지연하여 전체 속도 제어
         }
     }
-
-private: 
-    vector<vector<wchar_t>> map;    
-    int pacmanX, pacmanY;
-    bool gameOver;
-    int score;
-    int foodCnt;
-    HANDLE hConsole;
-    vector<Enemy> enemies; 
-    wchar_t ch; 
 
     void LoadMapFromFile(const wstring& filename)
     {
@@ -140,94 +182,46 @@ private:
             {
                 map[row][col] = line[col];
                 if (map[row][col] == L'0')
-                    foodCnt++;
+                {
+                    coinCnt++;
+                }
             } 
             row++;
         }
         file.close(); 
-    }
-  
-    void Render()
-    {
-        COORD cursorPosition = { 0, 0 };
-        SetConsoleCursorPosition(hConsole, cursorPosition); 
-
-        for (int row = 0; row < ROW_MAX; row++)
-        {
-            for (int col = 0; col < COL_MAX; col++)
-            {
-                ch = map[row][col];
-
-                if (ch == L'1')
-                {
-                    SetConsoleTextAttribute(hConsole, 8); // Gray 
-                    ch = L'⬛';
-                }
-                else if (map[row][col] == L'0')
-                {
-                    SetConsoleTextAttribute(hConsole, 6); // Cyan 
-                    ch = L'🍩';
-                    // ch = L'🍏'; 
-                }
-                else if (map[row][col] == L' ')
-                {
-                    SetConsoleTextAttribute(hConsole, 7); // White 
-                    ch = L' ';
-                } 
-                else if (map[row][col] == L'P') 
-                {
-                    SetConsoleTextAttribute(hConsole, 14); // Yellow 
-                    ch = L'😃'; 
-                }
-                else if (map[row][col] == L'M') 
-                {
-                    SetConsoleTextAttribute(hConsole, 12); 
-                    ch = L'👹'; 
-                    // ch = L'💀'; 
-                }             
-                
-                else if (map[row][col] == L'P' && invincibleCnt > 0)
-                {
-					SetConsoleTextAttribute(hConsole, 12); // Red
-                    ch = L'😃';
-                }                 
-                wcout << ch; 
-				SetConsoleTextAttribute(hConsole, 7); // Reset to default color 
-            }
-            wcout << endl;
-        }        
     }
 
     void Update()
     {
         if (_kbhit())
         {
-            char key = _getch();
-            int newX = pacmanX, newY = pacmanY;
+            Pos newPos{};
+            Pos curPos = pm->GetPos();
+
+            wchar_t key = _getwch(); // wide character 입력 받기
 
             switch (key)
             {
-            case 'w': newY = max(0, pacmanY - 1); break;
-            case 's': newY = min(ROW_MAX - 1, pacmanY + 1); break;
-            case 'a': newX = max(0, pacmanX - 1); break;
-            case 'd': newX = min(COL_MAX - 1, pacmanX + 1); break;
-            case 'q': gameOver = true; return;
+            case L'w': newPos.y = max(0, curPos.y - 1); break;
+            case L's': newPos.y = min(ROW_MAX - 1, curPos.y + 1); break;
+            case L'a': newPos.x = max(0, curPos.x - 1); break;
+            case L'd': newPos.x = min(COL_MAX - 1, curPos.x + 1); break;
+            case 27  : gameOver = true; return; 
             }
 
-            if (map[newY][newX] != '#')
+            if (map[newPos.y][newPos.x] != L'1')
             {
-                if (map[newY][newX] == 'o')
+                if (map[newPos.y][newPos.x] == L'0')
                 {
                     score++;
-                    foodCnt--;
+                    coinCnt--;
                 }
 
-                map[pacmanY][pacmanX] = ' ';
-                pacmanX = newX;
-                pacmanY = newY;
-                map[pacmanY][pacmanX] = 'P';
+                map[curPos.y][curPos.x] = L' '; 
+                pm->SetPos(newPos);
+                map[newPos.y][newPos.x] = L'ⓟ';
 
-                if (foodCnt == 0)
+                if (coinCnt == 0)
                 {
                     gameOver = true;
                 }
@@ -241,16 +235,53 @@ private:
         }
     }
 
+    void Render()
+    {
+        COORD cursorPosition = { 0, 0 };
+        SetConsoleCursorPosition(hScreen[screenIndex], cursorPosition);
+
+        for (int row = 0; row < ROW_MAX; row++)
+        {
+            for (int col = 0; col < COL_MAX; col++)
+            {
+                wch = map[row][col];
+
+                if (wch == L'1') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], 8);
+                    wch = L'□';
+                }
+                else if (wch == L'0') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], 14);
+                    wch = L'⊙';
+                }
+                else if (wch == L' ') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], 7);
+                }
+                else if (wch == L'ⓟ') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], pm->IsInvincible() ? 12 : 11);
+                }
+                else if (wch == L'ⓔ') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], 13);
+                }
+
+                WriteConsoleW(hScreen[screenIndex], &wch, 1, nullptr, nullptr);
+                SetConsoleTextAttribute(hScreen[screenIndex], 7);
+            }
+            WriteConsoleW(hScreen[screenIndex], L"\n", 1, nullptr, nullptr);
+        }
+        FlipBuffer();
+    }
+    
     void SpawnEnemy()
     {
-        int ex, ey;
+        Pos ep{}; //enemy position 
         do
         {
-            ex = rand() % COL_MAX;
-            ey = rand() % ROW_MAX;
-        } while (map[ey][ex] != L' ');
-        enemies.push_back({ ex, ey, L' ', false });
-        map[ey][ex] = L'M';
+            ep.x = rand() % COL_MAX;
+            ep.y = rand() % ROW_MAX;
+        } while (map[ep.y][ep.x] != L' ');
+        enemies.push_back({ ep, L' ', false }); 
+        map[ep.y][ep.x] = L'ⓔ';
     }
 
     void SpawnEnemies()
@@ -265,53 +296,61 @@ private:
     void MoveEnemies()
     {
         for (auto& enemy : enemies)
-        {
-            int direction, newX, newY;
+        {            
+            Pos newPos{}; 
+            Pos curPos = enemy.pos; 
+            Dir dir; 
             do
             {
-                direction = rand() % 4;
-                newX = enemy.x;
-                newY = enemy.y;
-
-                switch (direction)
-                {
-                case 0: newY = max(0, enemy.y - 1); break; // 위로 이동
-                case 1: newY = min(ROW_MAX - 1, enemy.y + 1); break; // 아래로 이동
-                case 2: newX = max(0, enemy.x - 1); break; // 왼쪽 이동
-                case 3: newX = min(COL_MAX - 1, enemy.x + 1); break; // 오른쪽 이동
+                dir = static_cast<Dir>(GetRand(3)); 
+                switch (dir) 
+                { 
+                case Dir::Up: newPos.y = max(0, curPos.y - 1); break; // 위로 이동
+                case Dir::Down: newPos.y = min(ROW_MAX - 1, curPos.y + 1); break; // 아래로 이동
+                case Dir::Left: newPos.x = max(0, curPos.x - 1); break; // 왼쪽 이동
+                case Dir::Right: newPos.x = min(COL_MAX - 1, curPos.x + 1); break; // 오른쪽 이동
                 }
 
-            } while (map[newY][newX] == L'#'); // 새 위치가 벽이면 이동할 위치 다시 설정 
+            } while (map[newPos.y][newPos.x] == L'1'); // 새 위치가 벽이면 이동할 위치 다시 설정 
 
-            enemy.prevChar = map[newY][newX]; // 이동할 위치의 기존 문자 저장 
+            enemy.prevChar = map[newPos.y][newPos.x]; // 이동할 위치의 기존 문자 저장 
 
-            map[newY][newX] = L'M'; // 새로운 위치에 `M` 배치 
+            map[newPos.y][newPos.x] = L'ⓔ'; // 새로운 위치에 `⊙` 배치 
 
-            // 이전 프레임 때 *을 M이 덮어 쓴 경우 
-            if (enemy.wasFood == true)
-                map[enemy.y][enemy.x] = L'*';
+            // 이전 프레임 때 0을 ◈이 덮어 쓴 경우 
+            if (enemy.wasCoin == true)
+                map[curPos.y][curPos.x] = L'0';
             else
-                map[enemy.y][enemy.x] = L' ';
+                map[curPos.y][curPos.x] = L' ';
 
             // 에너미 위치를 갱신한다 
-            enemy.x = newX;
-            enemy.y = newY;
+            enemy.pos = newPos;             
 
-            if (enemy.prevChar == L'*')
-                enemy.wasFood = true;
+            if (enemy.prevChar == L'0')
+                enemy.wasCoin = true;
             else
-                enemy.wasFood = false;
+                enemy.wasCoin = false;
         }
+    } 
+
+    bool HitEnemy(const Enemy& enemy)
+    {
+        bool hitState = false; 
+        
+        if (pm->GetPos().x == enemy.pos.x && pm->GetPos().y == enemy.pos.y)
+            hitState = true; 
+
+        return hitState; 
     }
 
     void CheckCollision()
     {
         if (invincibleCnt > 0)
-            return; // 무적 상태면 충돌 체크 안 함
+            return; // 무적 상태면 충돌 체크 안 함 
 
         for (const auto& enemy : enemies)
         {
-            if (enemy.x == pacmanX && enemy.y == pacmanY)
+            if (HitEnemy(enemy))   
             {
                 gameOver = true;
             }
@@ -332,7 +371,7 @@ private:
 
         if (gameOver)
         {
-            if (foodCnt == 0)
+            if (coinCnt == 0)
                 wcout << L"\n[ Game Clear! ]\n" << endl;
             else
                 wcout << L"\n[ Game Over! ]\n" << endl;
@@ -346,8 +385,8 @@ int Game::invincibleCnt = 0;
 int main()
 {
     SetConsoleOutputCP(CP_UTF8);
-    (void)_setmode(_fileno(stdout), _O_U16TEXT);
-    srand(time(nullptr));
+    (void)_setmode(_fileno(stdout), _O_U16TEXT); 
+    
     Game game;
     game.Run();
     system("pause");
