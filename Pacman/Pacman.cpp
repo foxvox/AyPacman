@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿/* 
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <conio.h>
@@ -13,8 +14,8 @@
 #include <random>
 #include <algorithm>  
 
-constexpr auto ROW_MAX = 22;
-constexpr auto COL_MAX = 42;
+constexpr auto ROW_MAX = 24;
+constexpr auto COL_MAX = 32;
 constexpr auto ENEMY_CNT = 5;
 
 using namespace std; 
@@ -22,6 +23,11 @@ using namespace std;
 enum class Dir 
 {
     Up, Down, Left, Right, None  
+}; 
+
+enum class ObjType 
+{
+    Way, Wall, Coin, Enemy, Pacman
 }; 
 
 struct Pos 
@@ -33,8 +39,11 @@ struct Pos
 struct Enemy
 {
     Pos pos; 
-    wchar_t prevChar; 
-    bool wasCoin;   
+}; 
+
+struct Coin
+{
+    Pos pos; 
 }; 
 
 class Pacman
@@ -74,13 +83,13 @@ class Game
 {
 private:
     vector<vector<wchar_t>> map; 
-    vector<Enemy> enemies;
+    vector<Coin> coins;
+    vector<Enemy> enemies; 
     Pacman* pm; 
     bool gameOver;
     int score;
     int coinCnt;
-    HANDLE hConsole;   
-    wchar_t wch;
+    HANDLE hConsole;      
     mt19937 randEngine; 
     HANDLE hScreen[2];
     int screenIndex;
@@ -88,20 +97,31 @@ public:
     static int enemyMoveCnt;
     static int invincibleCnt;
 public:
-    Game() : pm{}, gameOver{ false }, score{}, coinCnt{}, hConsole{}, wch{ L' ' }, hScreen{}, screenIndex {}
+    Game() : pm{}, gameOver{ false }, score{}, coinCnt{}, hConsole{}, hScreen{}, screenIndex {}
     {
         // 랜덤 시드 설정 
         random_device   rd; 
         mt19937         gen(rd()); 
         randEngine = gen; 
 
-        map.resize(ROW_MAX, vector<wchar_t>(COL_MAX, L' ')); 
+        map.resize(ROW_MAX, vector<wchar_t>(COL_MAX, L'0')); 
         LoadMapFromFile(L"mapFile.txt");                
         hConsole = GetStdHandle(STD_OUTPUT_HANDLE); 
         InitDoubleBuffer(); 
         SpawnPacman(); 
         SpawnEnemies();  
     } 
+
+    ~Game()
+    {
+        delete pm;
+        pm = nullptr;
+        for (auto& screen : hScreen)
+        {
+            if (screen != INVALID_HANDLE_VALUE)
+                CloseHandle(screen);
+        }
+    }
 
     void InitDoubleBuffer()
     {
@@ -133,15 +153,36 @@ public:
         Pos pos{ 20, 10 }; 
         pm = new Pacman(pos);
         map[pm->GetPos().y][pm->GetPos().x] = L'ⓟ';
+    } 
+
+    void SpawnCoins(int count)
+    {
+        coins.clear();
+        int placed = 0;
+
+        while (placed < count)
+        {
+            int x = GetRand(COL_MAX - 1);
+            int y = GetRand(ROW_MAX - 1);
+
+            if (map[y][x] == L'0' && !any_of(coins.begin(), coins.end(), [&](const Coin& c) {
+                return c.pos.x == x && c.pos.y == y;
+                }))
+            {
+                coins.push_back({ {x, y} });
+                placed++;
+            }
+        }
+
+        coinCnt = static_cast<int>(coins.size());
     }
 
     void Run()
     {
         while (!gameOver)
         {
-            Update();
-            Render();
-
+            Update(); 
+            
             if (enemyMoveCnt < INT_MAX)
                 enemyMoveCnt++;
             else
@@ -158,6 +199,7 @@ public:
                 SpawnEnemy();
             }
 
+            Render();
             RenderUx();
             Sleep(100); // 게임 루프 자체를 지연하여 전체 속도 제어
         }
@@ -181,7 +223,7 @@ public:
             for (int col = 0; col < COL_MAX && col < line.size(); col++)
             {
                 map[row][col] = line[col];
-                if (map[row][col] == L'0')
+                if (map[row][col] == L'2')
                 {
                     coinCnt++;
                 }
@@ -198,7 +240,7 @@ public:
             Pos newPos{};
             Pos curPos = pm->GetPos();
 
-            wchar_t key = _getwch(); // wide character 입력 받기
+            wchar_t key = _getwch(); 
 
             switch (key)
             {
@@ -209,15 +251,27 @@ public:
             case 27  : gameOver = true; return; 
             }
 
+            auto it = std::find_if(coins.begin(), coins.end(), [&](const Coin& c) {
+                return c.pos.x == newPos.x && c.pos.y == newPos.y;
+                });
+
+            if (it != coins.end())
+            {
+                coins.erase(it);
+                score++;
+                coinCnt--;
+            }
+
+
             if (map[newPos.y][newPos.x] != L'1')
             {
-                if (map[newPos.y][newPos.x] == L'0')
+                if (map[newPos.y][newPos.x] == L'*')
                 {
                     score++;
                     coinCnt--;
                 }
 
-                map[curPos.y][curPos.x] = L' '; 
+                map[curPos.y][curPos.x] = L'0'; 
                 pm->SetPos(newPos);
                 map[newPos.y][newPos.x] = L'ⓟ';
 
@@ -238,7 +292,14 @@ public:
     void Render()
     {
         COORD cursorPosition = { 0, 0 };
-        SetConsoleCursorPosition(hScreen[screenIndex], cursorPosition);
+        SetConsoleCursorPosition(hScreen[screenIndex], cursorPosition); 
+        wchar_t wch{}; 
+
+        // 코인 위치에 별 임시로 표시
+        for (const auto& coin : coins)
+        {
+            map[coin.pos.y][coin.pos.x] = L'2';
+        } 
 
         for (int row = 0; row < ROW_MAX; row++)
         {
@@ -251,17 +312,18 @@ public:
                     wch = L'□';
                 }
                 else if (wch == L'0') {
-                    SetConsoleTextAttribute(hScreen[screenIndex], 14);
-                    wch = L'⊙';
-                }
-                else if (wch == L' ') {
                     SetConsoleTextAttribute(hScreen[screenIndex], 7);
+                    wch = L' ';
                 }
-                else if (wch == L'ⓟ') {
-                    SetConsoleTextAttribute(hScreen[screenIndex], pm->IsInvincible() ? 12 : 11);
+                else if (wch == L'2') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], 14);
+                    wch = L'*';
                 }
                 else if (wch == L'ⓔ') {
                     SetConsoleTextAttribute(hScreen[screenIndex], 13);
+                }
+                else if (wch == L'ⓟ') {
+                    SetConsoleTextAttribute(hScreen[screenIndex], pm->IsInvincible() ? 12 : 11);
                 }
 
                 WriteConsoleW(hScreen[screenIndex], &wch, 1, nullptr, nullptr);
@@ -280,7 +342,7 @@ public:
             ep.x = rand() % COL_MAX;
             ep.y = rand() % ROW_MAX;
         } while (map[ep.y][ep.x] != L' ');
-        enemies.push_back({ ep, L' ', false }); 
+        enemies.push_back({ ep });
         map[ep.y][ep.x] = L'ⓔ';
     }
 
@@ -313,23 +375,8 @@ public:
 
             } while (map[newPos.y][newPos.x] == L'1'); // 새 위치가 벽이면 이동할 위치 다시 설정 
 
-            enemy.prevChar = map[newPos.y][newPos.x]; // 이동할 위치의 기존 문자 저장 
-
-            map[newPos.y][newPos.x] = L'ⓔ'; // 새로운 위치에 `⊙` 배치 
-
-            // 이전 프레임 때 0을 ◈이 덮어 쓴 경우 
-            if (enemy.wasCoin == true)
-                map[curPos.y][curPos.x] = L'0';
-            else
-                map[curPos.y][curPos.x] = L' ';
-
-            // 에너미 위치를 갱신한다 
+            map[newPos.y][newPos.x] = L'ⓔ';
             enemy.pos = newPos;             
-
-            if (enemy.prevChar == L'0')
-                enemy.wasCoin = true;
-            else
-                enemy.wasCoin = false;
         }
     } 
 
@@ -385,10 +432,11 @@ int Game::invincibleCnt = 0;
 int main()
 {
     SetConsoleOutputCP(CP_UTF8);
-    (void)_setmode(_fileno(stdout), _O_U16TEXT); 
+    (void)_setmode(_fileno(stdout), _O_U8TEXT); 
     
     Game game;
     game.Run();
     system("pause");
     return 0;
-}
+} 
+*/
