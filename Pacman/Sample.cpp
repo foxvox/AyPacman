@@ -1,3 +1,4 @@
+/*
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -132,7 +133,7 @@ public:
             for (int x = 0; x < COL_MAX; ++x) {
                 switch (line[x]) {
                 case L'1': map[y][x] = ObjType::Wall; break;
-                case L'0': /*fall through*/
+                case L'0': 
                 default:   map[y][x] = ObjType::Way;  break;
                 }
             }
@@ -362,3 +363,4 @@ int main()
     }
     return 0;
 }
+*/

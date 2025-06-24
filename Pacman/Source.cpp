@@ -1,4 +1,3 @@
-/* 
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -13,21 +12,22 @@
 #include <codecvt> 
 #include <random>
 #include <algorithm>  
+#include <sstream> 
 
-constexpr int ROW_MAX = 24;
-constexpr int COL_MAX = 32;
-constexpr int ENEMY_CNT = 7;
-constexpr int COIN_CNT = 40;
+constexpr int ROW_MAX = 14;
+constexpr int COL_MAX = 40;
+constexpr int ENEMY_CNT = 5;
+constexpr int COIN_CNT = 30;
 
 using namespace std;
 
 enum class ObjType
 {
-    Way,    // 길
-    Wall,   // 벽
-    Coin,   // 코인(코인)
-    Enemy,  // 적
-    Pacman  // 플레이어
+    Way = 0,    // 길
+    Wall = 1,   // 벽
+    Coin = 2,   // 코인(코인)
+    Enemy = 3,  // 적
+    Pacman = 4  // 플레이어
 };
 
 struct Pos
@@ -47,55 +47,51 @@ struct Coin
 
 class Pacman
 {
+private:    
     Pos pos;
-    bool invincible;
+    bool inv;
 public:
-    Pacman(const Pos& p) : pos(p), invincible(false) {}
+    Pacman(const Pos& p) : pos(p), inv(false) {}
     Pos  GetPos() const { return pos; }
     void SetPos(Pos p) { pos = p; }
-    bool IsInvincible() const { return invincible; }
-    void ActivateInv() { invincible = true; }
-    void DeactivateInv() { invincible = false; }
+    bool GetInv() const { return inv; }
+    void ActivateInv() { inv = true; }
+    void DeactivateInv() { inv = false; }
 };
 
 class Game
 {
+private:
     vector<vector<ObjType>>  map;    // 맵 저장 (ObjType)
     vector<Enemy>            enemies;
     vector<Coin>             coins;
     Pacman* pm = nullptr;
+    bool    gameOver = false;
+    int     score = 0;
+    int     enemyMoveCnt = 0; 
 
-    bool  gameOver = false;
-    int   score = 0;
-
-    HANDLE hConsole;
-    HANDLE hScreen[2];
-    int    screenIndex = 0;
-
+    HANDLE  hConsole;
+    HANDLE  hScreen[2];
+    int     screenIndex = 0;
     mt19937 randEngine;
-
 public:
-    static int invincibleCnt;
+    static int invCnt;
 
     Game()
     {
         // 랜덤 엔진 초기화
         random_device rd;
         randEngine = mt19937(rd());
-
         // 맵 크기 설정
         map.resize(ROW_MAX, vector<ObjType>(COL_MAX, ObjType::Way));
-
         // 콘솔 더블버퍼링 준비
         InitDoubleBuffer();
-
         // 맵 파일 로드
         LoadMapFromFile(L"mapFile.txt");
-
-        // 코인, 팩맨, 적 초기 배치
-        SpawnCoins(COIN_CNT);
-        SpawnPacman();
+        // 코인, 적, 팩맨 생성 
+        SpawnCoins(COIN_CNT);        
         SpawnEnemies();
+        SpawnPacman();
     }
 
     ~Game()
@@ -109,7 +105,6 @@ public:
         }
     }
 
-    // 콘솔 더블버퍼 초기화
     void InitDoubleBuffer()
     {
         CONSOLE_CURSOR_INFO cci{ 1, FALSE };
@@ -183,7 +178,7 @@ public:
     // 팩맨 생성
     void SpawnPacman()
     {
-        Pos start{ 16, 12 };
+        Pos start{ 20, 7 };
         pm = new Pacman(start);
         map[start.y][start.x] = ObjType::Pacman;
     }
@@ -209,27 +204,84 @@ public:
         map[p.y][p.x] = ObjType::Enemy;
     }
 
-    // 게임 루프
+    void CheckCollision()
+    {
+        if (invCnt > 0)
+            return;
+
+        for (const auto& enemy : enemies)
+        {
+            if (enemy.pos.x == pm->GetPos().x && enemy.pos.y == pm->GetPos().y) 
+            {
+                gameOver = true;
+            }
+        }
+    } 
+
+    void UpdateCoin() 
+    {
+        for (const auto& coin : coins)
+        {
+            map[coin.pos.y][coin.pos.x] = ObjType::Coin; 
+        }
+    } 
+
+    void UpdateEnemy() 
+    {
+        for (const auto& enemy : enemies) 
+        {
+            map[enemy.pos.y][enemy.pos.x] = ObjType::Enemy; 
+        }
+    }
+
     void Run()
     {
         while (!gameOver)
         {
             Update(); 
+
+            if (enemyMoveCnt < INT_MAX)
+                enemyMoveCnt++;
+            else
+                enemyMoveCnt = 0;
+
+            if (enemyMoveCnt % 5 == 0) // 적 특정 프레임마다 동작  
+            {
+                MoveEnemies();
+                CheckCollision();
+            }
+
+            if (enemyMoveCnt % 100 == 0) // 10초마다 적 추가
+            {
+                SpawnEnemy();
+            }
+
+            UpdateCoin(); 
+            UpdateEnemy(); 
+            
             Render(); 
             FlipBuffer();
             Sleep(100);
+        } 
+
+        SetConsoleCursorPosition(hScreen[screenIndex], { 0, (SHORT)(ROW_MAX + 4) }); 
+        
+        if (coins.empty())
+        {
+            WriteConsoleW(hScreen[screenIndex], L"Game Clear!", 11, nullptr, nullptr);
         }
-
-        wcout << L"\n=== " << (coins.empty() ? L"Game Clear!" : L"Game Over!") << L" ===\n"; 
+        else
+        {
+            WriteConsoleW(hScreen[screenIndex], L"Game Over!", 10, nullptr, nullptr);
+        }        
     }
-
-    // 키 입력, 팩맨 이동, 충돌/코인 처리
+   
     void Update()
     {
         if (!_kbhit()) return;
 
         wchar_t key = _getwch();
-        if (key == 27) { gameOver = true; return; }
+        if (key == VK_ESCAPE) { gameOver = true; return; }
 
         Pos old = pm->GetPos();
         Pos nw = old;
@@ -250,7 +302,7 @@ public:
         }
         else if (map[nw.y][nw.x] == ObjType::Enemy)
         {            
-            if (invincibleCnt <= 0)
+            if (invCnt <= 0)
             {
                 gameOver = true;
                 return;
@@ -279,10 +331,10 @@ public:
             if (score == 20)
             {
                 // 20점 획득 시 무적 상태로 전환
-                if (!pm->IsInvincible())
+                if (!pm->GetInv())
                 {
                     pm->ActivateInv();
-                    invincibleCnt = 200; // 20초
+                    invCnt = 200; // 20초
                 }
             }
         }
@@ -298,7 +350,7 @@ public:
         {
             Pos old = e.pos, nw = old;
             // 무적 아닐 때만 플레이어 충돌 체크
-            if (invincibleCnt <= 0 && old.x == pm->GetPos().x && old.y == pm->GetPos().y)
+            if (invCnt <= 0 && old.x == pm->GetPos().x && old.y == pm->GetPos().y)
             {
                 gameOver = true;
                 return;
@@ -306,10 +358,10 @@ public:
 
             // 4방 중 랜덤
             int d = GetRand(3);
-            if (d == 0) nw.y = max(0, old.y - 1);
+            if (d == 0)      nw.y = max(0, old.y - 1);
             else if (d == 1) nw.y = min(ROW_MAX - 1, old.y + 1);
             else if (d == 2) nw.x = max(0, old.x - 1);
-            else           nw.x = min(COL_MAX - 1, old.x + 1);
+            else             nw.x = min(COL_MAX - 1, old.x + 1);
 
             if (map[nw.y][nw.x] == ObjType::Wall ||
                 map[nw.y][nw.x] == ObjType::Enemy)
@@ -328,48 +380,58 @@ public:
         COORD pos{ 0,0 };
         SetConsoleCursorPosition(hScreen[screenIndex], pos);
 
-        if (invincibleCnt > 0)
-            invincibleCnt--;
+        if (invCnt > 0)
+            invCnt--;
 
         for (int y = 0; y < ROW_MAX; ++y)
         {
             for (int x = 0; x < COL_MAX; ++x)
             {
-                ObjType o = map[y][x];
-                wchar_t ch{};
+                ObjType ot = map[y][x];
+                wchar_t wch{};
                 WORD    color{};
 
-                switch (o)
+                switch (ot)
                 {
                 case ObjType::Wall:
-                    ch = L'■'; color = 8; break;
+                    wch = L'□'; color = 8; break;
                 case ObjType::Way:
-                    ch = L' ';  color = 7; break;
+                    wch = L' ';  color = 7; break;
                 case ObjType::Coin:
-                    ch = L'*';  color = 14; break;
+                    wch = L'o';  color = 14; break;
                 case ObjType::Enemy:
-                    ch = L'ⓔ';  color = 13; break;
+                    wch = L'ⓔ';  color = 13; break;
                 case ObjType::Pacman:
-                    ch = L'ⓟ';
-                    color = pm->IsInvincible() ? 12 : 11;
+                    wch = L'ⓟ';
+                    color = pm->GetInv() ? 12 : 11;
                     break;
                 }
-
                 SetConsoleTextAttribute(hScreen[screenIndex], color);
-                WriteConsoleW(hScreen[screenIndex], &ch, 1, nullptr, nullptr);
+                WriteConsoleW(hScreen[screenIndex], &wch, 1, nullptr, nullptr);
             }
             WriteConsoleW(hScreen[screenIndex], L"\n", 1, nullptr, nullptr);
         }
 
-        // 스코어 & 무적UI        
-        SetConsoleCursorPosition(hConsole, { 0, (SHORT)ROW_MAX });
-        wcout << L"Score: " << score;
-        if (invincibleCnt > 0)
-            wcout << L"  Invincible: " << invincibleCnt / 10 << L"s"; 
+        SetConsoleCursorPosition(hScreen[screenIndex], { 0, (SHORT)(ROW_MAX + 1) });
+        WriteConsoleW(hScreen[screenIndex], L"Score: ", 7, nullptr, nullptr);
+        wstringstream ss1;
+        ss1 << score;
+        std::wstring scoreStr = ss1.str();
+        WriteConsoleW(hScreen[screenIndex], scoreStr.c_str(), (DWORD)scoreStr.size(), nullptr, nullptr); 
+
+        wstringstream ss2;
+        if (invCnt > 0)
+        {
+            WriteConsoleW(hScreen[screenIndex], L"\n", 1, nullptr, nullptr);
+            WriteConsoleW(hScreen[screenIndex], L"InvCnt: ", 8, nullptr, nullptr);
+            ss2 << static_cast<int>(invCnt / 10);  
+            std::wstring invCntStr = ss2.str();
+            WriteConsoleW(hScreen[screenIndex], invCntStr.c_str(), (DWORD)invCntStr.size(), nullptr, nullptr);
+        }
     }
 }; 
 
-int Game::invincibleCnt = 0;
+int Game::invCnt = 0;
 
 int main()
 {
@@ -381,7 +443,7 @@ int main()
     g.Run();
 
     wcout << L"\nThank you for playing!" << endl; 
-    system("pause");
+    (void)_getwch();
     return 0;
 }  
-*/
+
